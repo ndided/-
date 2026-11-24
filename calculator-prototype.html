@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#f4f4f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Калькулятор">
+<meta name="description" content="Минималистичный калькулятор с темами, историей и конвертерами.">
+<title>Калькулятор</title>
+<style>
+:root{--bg:#08090b;--panel:#141518;--key:#ff922e;--keyText:#17120c;--text:#f7f7f8;--muted:#a0a1a8;--accent:#ff7a1a;--line:#e7e7eb;--radius:22px;--keySize:clamp(58px,16vw,76px);--font: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;min-height:100svh;background:var(--bg);color:var(--text);font-family:var(--font);display:flex;justify-content:center;align-items:stretch;padding:0;transition:background .25s,color .25s;overflow-x:hidden}
+body.dark{color-scheme:dark}
+.app{width:100%;max-width:520px;min-height:100vh;min-height:100svh;background:var(--bg);border:0;border-radius:0;padding:max( max(18px, env(safe-area-inset-top)), 18px) clamp(18px,4.2vw,28px) max( max(18px, env(safe-area-inset-bottom)), 18px);box-shadow:none;display:flex;flex-direction:column;transition:background .25s,border .25s}
+.header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:none}
+.header-actions{display:flex;gap:9px}
+.icon-btn{height:58px;min-width:58px;padding:0;border:1px solid var(--line);border-radius:50%;background:#191a1d;color:var(--text);font-size:20px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;touch-action:manipulation;position:relative;z-index:2}
+.icon-btn.history-btn{font-size:0;font-weight:650;min-width:58px}
+.icon-btn svg{width:29px;height:29px;stroke:currentColor;fill:none;stroke-width:1.9}
+.display{flex:1;min-height:180px;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;padding:24px 3px 34px;overflow:hidden}
+.expression{width:100%;min-height:29px;text-align:right;color:var(--muted);font-size:20px;overflow-wrap:anywhere}
+.result{width:100%;text-align:right;font-size:clamp(43px,12vw,62px);font-weight:650;letter-spacing:-2px;line-height:1.15;overflow-wrap:anywhere}
+.result.small{font-size:clamp(31px,9vw,43px)}
+.keys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(9px,2.1vw,16px);width:100%;margin-bottom:0}
+.key{width:100%;aspect-ratio:1/1;height:auto;min-height:0;border:1px solid #ffffff18;border-radius:50%;background:var(--key);color:var(--keyText);font:400 clamp(27px,8vw,43px) var(--font);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;position:relative;z-index:1;transition:transform .12s,filter .12s,background .2s;display:flex;align-items:center;justify-content:center}
+.key:active{transform:scale(.94);filter:brightness(1.13)}
+button{ -webkit-appearance:none; appearance:none; }
+button:focus-visible{outline:3px solid #ffffff88;outline-offset:2px}
+.key.utility{background:var(--utility,#e7e7eb);color:var(--utilityText,#24242a);font-size:clamp(26px,7.5vw,42px)}
+.key.operator{background:var(--accent);color:white;font-size:clamp(32px,8vw,48px)}
+.key.zero{grid-column:span 1}
+
+.photo-tools{margin-top:12px}
+.photo-btn{width:100%;display:flex;align-items:center;gap:12px;padding:14px 15px;border:1px solid var(--line);border-radius:17px;background:var(--panel);color:var(--text);text-align:left;cursor:pointer}
+.photo-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#ff922e;color:#17120c;font-size:23px;flex-shrink:0}
+.photo-btn b{display:block;font-size:14px}
+.photo-btn small{display:block;color:var(--muted);font-size:11px;margin-top:4px;line-height:1.35}
+.photo-arrow{margin-left:auto;font-size:26px;color:var(--muted)}
+.photo-workspace{margin-top:10px;padding:13px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}
+.photo-workspace img{display:block;max-width:100%;max-height:230px;margin:0 auto 12px;border-radius:12px;object-fit:contain}
+.photo-workspace label{margin-top:12px}
+.photo-status{font-size:13px;color:var(--muted);line-height:1.45;margin:8px 0}
+.photo-checks{font-size:12px;color:var(--muted);line-height:1.5;margin-top:9px}
+.photo-workspace .primary:disabled{opacity:.45}
+.quick-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:15px}
+.quick{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:15px;padding:12px 5px;font-size:13px;font-weight:650;cursor:pointer}
+.quick span{display:block;font-size:18px;margin-bottom:4px}
+.footer-note{text-align:center;color:var(--muted);font-size:11px;margin-top:15px}
+body.theme-white{--bg:#f4f4f6;--panel:#fff;--key:#202027;--keyText:#fff;--text:#17171b;--muted:#85858e;--line:#e7e7eb;--utility:#e7e7eb;--utilityText:#24242a;color-scheme:light}
+body.theme-black{--accent:#ff7a1a;--bg:#08090b;--panel:#141518;--key:#ff922e;--keyText:#17120c;--text:#f7f7fa;--muted:#a0a1a8;--line:#303139;--utility:#34363d;--utilityText:#fff;color-scheme:dark}
+body.theme-blue{--accent:#7c9df2;--bg:#14243d;--panel:#1b2e4b;--key:#64748b;--keyText:#fff;--text:#f7f9ff;--muted:#b4c1d4;--line:#354966;--utility:#8291a8;--utilityText:#fff;color-scheme:dark}
+body.custom-theme{color-scheme:light}
+body.custom-theme .key:not(.operator){background:var(--custom-key,#333);color:var(--custom-key-text,#fff)}
+.overlay{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end;justify-content:center;padding:12px;z-index:5}
+.overlay.show{display:flex}
+.sheet{width:100%;max-width:440px;max-height:88vh;overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:28px;padding:20px;box-shadow:0 20px 70px #0004}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:17px}
+.sheet h2{font-size:21px;margin:0}
+.close{border:0;background:var(--bg);color:var(--text);width:38px;height:38px;border-radius:13px;font-size:21px}
+.section{padding:15px 0;border-top:1px solid var(--line)}
+.section-title{font-weight:700;margin-bottom:11px}
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.theme-option{border:2px solid var(--line);border-radius:16px;padding:10px 6px;background:var(--panel);color:var(--text);font-weight:650;font-size:12px;cursor:pointer}
+.theme-option.active{border-color:var(--accent)}
+.swatch{height:35px;border-radius:10px;margin-bottom:8px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+select,input[type="text"],input[type="number"],input[type="search"]{width:100%;padding:13px 12px;border-radius:13px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit;outline:none}
+input[type="range"]{width:100%;accent-color:var(--accent)}
+.primary{width:100%;border:0;border-radius:14px;background:var(--accent);color:#fff;padding:14px;font-weight:700;font-size:15px;margin-top:10px}
+.row{display:flex;gap:9px;align-items:center}.row>*{flex:1;min-width:0}
+.history-item{padding:13px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px}
+.history-item button{border:0;background:transparent;color:var(--text);text-align:right;font:inherit;cursor:pointer}
+.history-expression{color:var(--muted);font-size:13px;margin-bottom:4px}
+.history-answer{font-size:17px;font-weight:700}
+.empty{color:var(--muted);text-align:center;padding:25px 5px}
+.tabs{display:flex;gap:7px;margin-bottom:14px}
+.tab{flex:1;padding:11px 7px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);font-weight:650}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.converter-result{padding:16px;background:var(--bg);border-radius:15px;margin-top:13px;font-size:20px;font-weight:750;overflow-wrap:anywhere}
+.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#222;color:#fff;padding:11px 16px;border-radius:30px;font-size:13px;transition:.2s;z-index:10}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(max-height:760px){.display{padding-top:8px;padding-bottom:18px}.keys{gap:8px}.key{font-size:clamp(24px,6.8vw,36px)}}
+@media(min-width:700px){.app{max-width:480px}.overlay{align-items:center}.sheet{max-height:80vh}}
+</style>
+</head>
+<body class="theme-black">
+<main class="app">
+  <header class="header">
+    <div class="brand">Калькулятор</div>
+    <div class="header-actions">
+      <button class="icon-btn history-btn" id="historyOpen" aria-label="История">
+        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>
+        История
+      </button>
+      <button class="icon-btn" id="settingsOpen" aria-label="Настройки">
+        <svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.1.9-1.5 2.6-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.2 1.5h-3l-.2-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.5-2.6 1.1-.9a7 7 0 0 1 0-1.8l-1.1-.9 1.5-2.6 1.4.5a7.8 7.8 0 0 1 1.5-.9l.2-1.5h3l.2 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.5 2.6-1.1.9a7 7 0 0 1 0 1.8Z" transform="translate(-1 -1)"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="display" aria-live="polite">
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </section>
+
+  <section class="keys" aria-label="Клавиши калькулятора">
+    <button class="key utility" data-action="backspace" aria-label="Удалить">⌫</button>
+    <button class="key utility" data-action="clear">AC</button>
+    <button class="key utility" data-action="percent">%</button>
+    <button class="key operator" data-value="/">÷</button>
+    <button class="key" data-value="7">7</button><button class="key" data-value="8">8</button><button class="key" data-value="9">9</button><button class="key operator" data-value="*">×</button>
+    <button class="key" data-value="4">4</button><button class="key" data-value="5">5</button><button class="key" data-value="6">6</button><button class="key operator" data-value="-">−</button>
+    <button class="key" data-value="1">1</button><button class="key" data-value="2">2</button><button class="key" data-value="3">3</button><button class="key operator" data-value="+">+</button>
+    <button class="key utility" data-action="sign">+/−</button><button class="key zero" data-value="0">0</button><button class="key" data-value=".">,</button><button class="key operator" data-action="equals">=</button>
+  </section>
+
+  <div class="photo-tools" style="display:none">
+    <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
+    <button class="photo-btn" id="photoPick">
+      <span class="photo-icon">▧</span>
+      <span><b>Решить по фото</b><small>Сфотографируй пример или прикрепи изображение</small></span>
+      <span class="photo-arrow">›</span>
+    </button>
+    <div class="photo-workspace" id="photoWorkspace" hidden>
+      <img id="photoPreview" alt="Выбранное фото с примером">
+      <div class="photo-status" id="photoStatus">Готовим распознавание…</div>
+      <label for="recognizedExpression">Распознанный пример. Проверь символы:</label>
+      <input type="text" id="recognizedExpression" placeholder="Например: 125 + 37 × 2">
+      <div class="photo-checks" id="photoChecks">Проверки ещё не запускались</div>
+      <button class="primary" id="solvePhoto" disabled>Проверить и решить</button>
+    </div>
+  </div>
+
+  <nav class="quick-actions" style="display:none">
+    <button class="quick" id="copyBtn"><span>▢</span>Копировать</button>
+    <button class="quick" id="currencyOpen"><span>⇄</span>Валюта</button>
+    <button class="quick" id="unitsOpen"><span>⌁</span>Единицы</button>
+  </nav>
+  <div class="footer-note" style="display:none">Просто. Точно. Удобно.</div>
+</main>
+
+<div class="overlay" id="settingsOverlay">
+ <section class="sheet">
+  <div class="sheet-head"><h2>Настройки</h2><button class="close" data-close>×</button></div>
+  <div class="section">
+   <div class="section-title">Оформление</div>
+   <div class="theme-grid">
+    <button class="theme-option" data-theme="white"><div class="swatch" style="background:linear-gradient(135deg,#08090b 65%,#ff922e 65%);border:1px solid #555"></div>Белая</button>
+    <button class="theme-option" data-theme="black"><div class="swatch" style="background:linear-gradient(135deg,#08090b 65%,#ff922e 65%)"></div>Чёрная</button>
+    <button class="theme-option" data-theme="blue"><div class="swatch" style="background:#14243d"></div>Ночная синяя</button>
+   </div>
+  </div>
+  <div class="section">
+   <div class="section-title">Свои цвета</div>
+   <div class="row">
+    <div><label for="customBg">Фон</label><input type="color" id="customBg" value="#f4f4f6" style="width:100%;height:44px"></div>
+    <div><label for="customKey">Кнопки</label><input type="color" id="customKey" value="#25252c" style="width:100%;height:44px"></div>
+    <div><label for="customAccent">Акцент</label><input type="color" id="customAccent" value="#6653d9" style="width:100%;height:44px"></div>
+   </div>
+   <button class="primary" id="applyCustom">Применить свои цвета</button>
+  </div>
+  <div class="section">
+   <div class="section-title">Размер кнопок</div>
+   <label for="buttonSize">Высота: <b id="sizeValue">68</b> px</label>
+   <input type="range" id="buttonSize" min="54" max="82" value="68">
+  </div>
+  <div class="section">
+   <div class="section-title">Шрифт</div>
+   <select id="fontChoice">
+    <option value='-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif'>Системный</option>
+    <option value='Arial,sans-serif'>Arial</option>
+    <option value='Georgia,serif'>Georgia</option>
+    <option value='"Trebuchet MS",sans-serif'>Trebuchet</option>
+   </select>
+  </div>
+  <div class="section">
+   <label><input type="checkbox" id="animations" checked> Плавные анимации</label>
+  </div>
+  <button class="primary" data-close>Готово</button>
+ </section>
+</div>
+
+<div class="overlay" id="historyOverlay">
+ <section class="sheet">
+  <div class="sheet-head"><h2>История вычислений</h2><button class="close" data-close>×</button></div>
+  <input type="search" id="historySearch" placeholder="Поиск по истории…">
+  <div id="historyList"></div>
+  <button class="primary" id="clearHistory">Очистить историю</button>
+ </section>
+</div>
+
+<div class="overlay" id="converterOverlay">
+ <section class="sheet">
+  <div class="sheet-head"><h2 id="converterTitle">Конвертер</h2><button class="close" data-close>×</button></div>
+  <div class="tabs"><button class="tab active" data-tab="currency">Валюта</button><button class="tab" data-tab="units">Единицы</button></div>
+  <div id="currencyPanel">
+   <label for="currencyAmount">Сумма</label><input type="number" id="currencyAmount" value="1" min="0" step="any">
+   <div class="row">
+    <div><label for="currencyFrom">Из</label><select id="currencyFrom"><option>EUR</option><option>USD</option><option>RUB</option><option>GBP</option><option>JPY</option></select></div>
+    <div><label for="currencyTo">В</label><select id="currencyTo"><option>USD</option><option>EUR</option><option>RUB</option><option>GBP</option><option>JPY</option></select></div>
+   </div>
+   <label for="exchangeRate">Курс: сколько единиц валюты «В» за 1 единицу «Из»</label>
+   <input type="number" id="exchangeRate" value="1.08" min="0" step="any">
+   <div class="converter-result" id="currencyResult">1 EUR = 1,08 USD</div>
+   <p style="color:var(--muted);font-size:12px;line-height:1.5">Курс вводится вручную. Для актуального курса обнови его по надёжному источнику: автоматическое получение котировок здесь не подключено.</p>
+  </div>
+  <div id="unitsPanel" style="display:none">
+   <label for="unitType">Тип измерения</label><select id="unitType"><option value="length">Длина</option><option value="mass">Масса</option><option value="temperature">Температура</option><option value="volume">Объём</option></select>
+   <label for="unitAmount">Значение</label><input type="number" id="unitAmount" value="1" step="any">
+   <div class="row">
+    <div><label for="unitFrom">Из</label><select id="unitFrom"></select></div>
+    <div><label for="unitTo">В</label><select id="unitTo"></select></div>
+   </div>
+   <div class="converter-result" id="unitResult">—</div>
+  </div>
+ </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let expr="",lastAnswer=0,justSolved=false,history=[];
+try{history=JSON.parse(localStorage.getItem("calc-history")||"[]")}catch{}
+function saveHistory(){try{localStorage.setItem("calc-history",JSON.stringify(history))}catch{}}
+function showToast(msg){$("toast").textContent=msg;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),1700)}
+function fmt(n){if(!Number.isFinite(n))throw Error("Ошибка");return Number(n.toPrecision(11)).toLocaleString("ru-RU",{maximumFractionDigits:9})}
+function pretty(s){return s.replace(/\*/g,"×").replace(/\//g,"÷").replace(/\./g,",")}
+function render(){ $("expression").textContent=pretty(expr); $("result").classList.toggle("small",$("result").textContent.length>12); }
+function parse(s){
+ const t=s.match(/(?:\d+\.?\d*|\.\d+)|[+\-*/]/g);if(!t||t.join("")!==s)throw Error("Некорректное выражение");let i=0;
+ function factor(){let sign=1;while(t[i]==="+"||t[i]==="-"){if(t[i++]==="-")sign*=-1}let x=t[i++];if(!x||!/^(\d+\.?\d*|\.\d+)$/.test(x))throw Error("Некорректное число");return sign*Number(x)}
+ function term(){let v=factor();while(t[i]==="*"||t[i]==="/"){let op=t[i++],b=factor();if(op==="/"&&b===0)throw Error("На ноль делить нельзя");v=op==="*"?v*b:v/b}return v}
+ function sum(){let v=term();while(t[i]==="+"||t[i]==="-"){let op=t[i++],b=term();v=op==="+"?v+b:v-b}return v}
+ let v=sum();if(i!==t.length||!Number.isFinite(v))throw Error("Ошибка");return v;
+}
+function preview(){try{if(!expr||/[+\-*/.]$/.test(expr))return;let v=parse(expr);$("result").textContent=fmt(v);render()}catch{}}
+function add(v){
+ if(justSolved&&/[0-9.]/.test(v))expr="";
+ justSolved=false;
+ if(/[+\-*/]/.test(v)){if(!expr&&v!=="-")return;if(/[+\-*/]$/.test(expr))expr=expr.slice(0,-1)}
+ if(v==="."){let last=expr.split(/[+\-*/]/).pop();if(last.includes("."))return;if(!last)v="0."}
+ expr+=v;render();preview();
+}
+function calculate(){
+ if(!expr||/[+\-*/.]$/.test(expr))return;
+ try{let ans=parse(expr);lastAnswer=ans;history.unshift({expression:expr,answer:ans,time:Date.now()});history=history.slice(0,100);saveHistory();$("expression").textContent=pretty(expr)+" =";$("result").textContent=fmt(ans);expr=String(Number(ans.toPrecision(11)));justSolved=true;render();}catch(e){showToast(e.message||"Ошибка")}
+}
+function clearAll(){expr="";$("expression").textContent="";$("result").textContent="0";justSolved=false}
+function backspace(){if(justSolved){clearAll();return}expr=expr.slice(0,-1);$("result").textContent="0";render();preview()}
+function percent(){let m=expr.match(/(\d+\.?\d*|\.\d+)$/);if(!m)return;expr=expr.slice(0,m.index)+String(Number(m[0])/100);render();preview()}
+function sign(){let m=expr.match(/(\d+\.?\d*|\.\d+)$/);if(!m){if(!expr)expr="-";else return}else{let p=m.index;if(expr[p-1]==="-")expr=expr.slice(0,p-1)+expr.slice(p);else expr=expr.slice(0,p)+"-"+expr.slice(p)}render();preview()}
+document.querySelector(".keys").addEventListener("click",e=>{let b=e.target.closest("button");if(!b)return;let a=b.dataset.action,v=b.dataset.value;if(v!==undefined)add(v);else if(a==="clear")clearAll();else if(a==="backspace")backspace();else if(a==="percent")percent();else if(a==="sign")sign();else if(a==="equals")calculate()});
+document.addEventListener("keydown",e=>{if(/^[0-9.]$/.test(e.key))add(e.key);else if(["+","-","*","/"].includes(e.key))add(e.key);else if(e.key==="Enter"||e.key==="=")calculate();else if(e.key==="Backspace")backspace();else if(e.key==="Escape"){document.querySelectorAll(".overlay").forEach(x=>x.classList.remove("show"))}});
+$("copyBtn").onclick=async()=>{let val=$("result").textContent;if(!val||val==="0"&&!expr)return;try{await navigator.clipboard.writeText(val);showToast("Результат скопирован")}catch{showToast("Копирование недоступно в этом браузере")}};
+function open(id){$(id).classList.add("show")}function closeAll(){$("settingsOverlay").classList.remove("show");$("historyOverlay").classList.remove("show");$("converterOverlay").classList.remove("show")}
+$("settingsOpen").onclick=()=>open("settingsOverlay");$("historyOpen").onclick=()=>{renderHistory();open("historyOverlay")};
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);
+document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)closeAll()}));
+function setTheme(t){document.body.classList.remove("theme-white","theme-black","theme-blue","custom-theme");document.body.classList.add("theme-"+t);document.querySelectorAll("[data-theme]").forEach(b=>b.classList.toggle("active",b.dataset.theme===t));document.querySelector('meta[name="theme-color"]').content=t==="white"?"#f4f4f6":t==="black"?"#090a0d":"#14243d";try{localStorage.setItem("calc-theme",t)}catch{}}
+document.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>setTheme(b.dataset.theme));
+$("applyCustom").onclick=()=>{let bg=$("customBg").value,key=$("customKey").value,accent=$("customAccent").value;document.body.classList.remove("theme-white","theme-black","theme-blue");document.body.classList.add("custom-theme");document.documentElement.style.setProperty("--bg",bg);document.documentElement.style.setProperty("--panel",bg);document.documentElement.style.setProperty("--key",key);document.documentElement.style.setProperty("--keyText",contrast(key));document.documentElement.style.setProperty("--accent",accent);document.documentElement.style.setProperty("--text",contrast(bg));document.documentElement.style.setProperty("--muted",contrast(bg)==="#fff"?"#c3c3c3":"#777");document.documentElement.style.setProperty("--line",contrast(bg)==="#fff"?"#454545":"#ddd");document.documentElement.style.setProperty("--utility",key);document.documentElement.style.setProperty("--utilityText",contrast(key));document.querySelector('meta[name="theme-color"]').content=bg;showToast("Свои цвета применены")};
+function contrast(hex){let c=hex.replace("#","");let r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16);return (r*299+g*587+b*114)/1000>145?"#17171b":"#ffffff"}
+$("buttonSize").oninput=e=>{document.documentElement.style.setProperty("--keySize",e.target.value+"px");$("sizeValue").textContent=e.target.value};
+$("fontChoice").onchange=e=>document.documentElement.style.setProperty("--font",e.target.value);
+$("animations").onchange=e=>document.body.classList.toggle("no-animation",!e.target.checked);
+function renderHistory(){let q=$("historySearch").value.toLowerCase();let list=history.filter(h=>(h.expression+" "+h.answer).toLowerCase().includes(q));$("historyList").innerHTML="";if(!list.length){$("historyList").innerHTML='<div class="empty">Ничего не найдено</div>';return}list.forEach(h=>{let d=document.createElement("div");d.className="history-item";let left=document.createElement("div");let ex=document.createElement("div");ex.className="history-expression";ex.textContent=pretty(h.expression);let an=document.createElement("div");an.className="history-answer";an.textContent=fmt(h.answer);left.append(ex,an);let use=document.createElement("button");use.textContent="↗";use.title="Вернуть в калькулятор";use.onclick=()=>{expr=String(h.answer);$("result").textContent=fmt(h.answer);render();closeAll();justSolved=true};d.append(left,use);$("historyList").append(d)})}
+$("historySearch").oninput=renderHistory;$("clearHistory").onclick=()=>{history=[];saveHistory();renderHistory();showToast("История очищена")};
+$("currencyOpen").onclick=()=>{open("converterOverlay");selectTab("currency");updateCurrency()};$("unitsOpen").onclick=()=>{open("converterOverlay");selectTab("units");updateUnits()};
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>selectTab(b.dataset.tab));
+function selectTab(t){document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));$("currencyPanel").style.display=t==="currency"?"block":"none";$("unitsPanel").style.display=t==="units"?"block":"none";$("converterTitle").textContent=t==="currency"?"Конвертер валют":"Конвертер единиц"}
+["currencyAmount","currencyFrom","currencyTo","exchangeRate"].forEach(id=>$(id).addEventListener("input",updateCurrency));
+function updateCurrency(){let amount=Number($("currencyAmount").value),rate=Number($("exchangeRate").value),from=$("currencyFrom").value,to=$("currencyTo").value;if(from===to)rate=1;$("currencyResult").textContent=Number.isFinite(amount*rate)?fmt(amount*rate)+" "+to:"Введите сумму и курс"}
+const units={length:{m:1,km:1000,cm:.01,mm:.001,mi:1609.344,ft:.3048},mass:{kg:1,g:.001,mg:.000001,t:1000,lb:.45359237},volume:{l:1,ml:.001,m3:1000,gal:3.785411784}};
+const names={m:"Метры",km:"Километры",cm:"Сантиметры",mm:"Миллиметры",mi:"Мили",ft:"Футы",kg:"Килограммы",g:"Граммы",mg:"Миллиграммы",t:"Тонны",lb:"Фунты",l:"Литры",ml:"Миллилитры",m3:"Кубометры",gal:"Галлоны",C:"°C",F:"°F",K:"Кельвины"};
+function populateUnits(){let type=$("unitType").value,keys=type==="temperature"?["C","F","K"]:Object.keys(units[type]);["unitFrom","unitTo"].forEach((id,j)=>{$(id).innerHTML="";keys.forEach(k=>{let o=document.createElement("option");o.value=k;o.textContent=names[k];$(id).append(o)});$(id).value=keys[Math.min(j,keys.length-1)]})}
+function updateUnits(){let type=$("unitType").value,a=Number($("unitAmount").value),from=$("unitFrom").value,to=$("unitTo").value;if(!Number.isFinite(a)){$("unitResult").textContent="Введите значение";return}let v;if(type==="temperature"){let c=from==="C"?a:from==="F"?(a-32)*5/9:a-273.15;v=to==="C"?c:to==="F"?c*9/5+32:c+273.15}else{v=a*units[type][from]/units[type][to]}$("unitResult").textContent=fmt(v)+" "+names[to]}
+$("unitType").onchange=()=>{populateUnits();updateUnits()};["unitAmount","unitFrom","unitTo"].forEach(id=>$(id).addEventListener("input",updateUnits));
+populateUnits();$("unitTo").value="km";updateUnits();
+
+/* Photo math: five OCR passes with different page-segmentation modes.
+   The user always gets an editable expression before the final calculation. */
+let selectedPhotoUrl=null, photoReady=false;
+const photoInput=$("photoInput");
+$("photoPick").onclick=()=>photoInput.click();
+photoInput.addEventListener("change",async()=>{
+ const file=photoInput.files&&photoInput.files[0];
+ if(!file)return;
+ if(!file.type.startsWith("image/")){showToast("Выбери изображение");return}
+ if(selectedPhotoUrl)URL.revokeObjectURL(selectedPhotoUrl);
+ selectedPhotoUrl=URL.createObjectURL(file);
+ $("photoPreview").src=selectedPhotoUrl;
+ $("photoWorkspace").hidden=false;
+ $("photoStatus").textContent="Загружаем распознавание текста…";
+ $("photoChecks").textContent="Выполняем 5 независимых попыток распознавания.";
+ $("recognizedExpression").value="";
+ $("solvePhoto").disabled=true;
+ photoReady=false;
+ try{
+   if(!window.Tesseract){
+     await new Promise((resolve,reject)=>{
+       const s=document.createElement("script");
+       s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+       s.onload=resolve;s.onerror=()=>reject(Error("Не удалось загрузить модуль распознавания. Проверь интернет."));
+       document.head.appendChild(s);
+     });
+   }
+   const worker=await Tesseract.createWorker("eng");
+   const modes=[6,7,11,13,6], candidates=[];
+   for(let i=0;i<modes.length;i++){
+     $("photoStatus").textContent=`Распознавание: проверка ${i+1} из 5…`;
+     const {data}=await worker.recognize(file,{tessedit_pageseg_mode:modes[i]});
+     const raw=data.text||"";
+     const candidate=extractMath(raw);
+     candidates.push({candidate,confidence:data.confidence||0,raw});
+     $("photoChecks").textContent=`Завершено ${i+1} из 5 проверок.`;
+   }
+   await worker.terminate();
+   const usable=candidates.filter(x=>x.candidate);
+   if(!usable.length){
+     $("photoStatus").textContent="Не удалось уверенно распознать пример. Введи его вручную в поле ниже.";
+     $("photoChecks").textContent="Пять попыток выполнены, но выражение не найдено.";
+   }else{
+     const counts={};
+     usable.forEach(x=>counts[x.candidate]=(counts[x.candidate]||0)+1);
+     const ranked=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+     const best=ranked[0][0], votes=ranked[0][1];
+     $("recognizedExpression").value=best;
+     const consensus=votes>=3;
+     $("photoStatus").textContent=consensus
+       ?`Распознавание совпало в ${votes} из 5 проверок. Всё равно сверь символы с фотографией.`
+       :"Результаты распознавания различаются. Обязательно исправь пример вручную.";
+     $("photoChecks").textContent=`Проверки: ${usable.length}/5 нашли выражение; лучший вариант совпал ${votes}/5 раз.`;
+     if(ranked.length>1)$("photoChecks").textContent+=` Другой вариант: ${ranked[1][0]}.`;
+   }
+   $("solvePhoto").disabled=false;photoReady=true;
+ }catch(err){
+   $("photoStatus").textContent=err.message||"Ошибка распознавания.";
+   $("photoChecks").textContent="Можно ввести пример вручную и продолжить.";
+   $("solvePhoto").disabled=false;photoReady=true;
+ }
+});
+function extractMath(raw){
+ let s=raw.replace(/[×xX]/g,"*").replace(/[÷]/g,"/").replace(/[−–—]/g,"-").replace(/,/g,".");
+ s=s.replace(/[^\d+\-*/().\s]/g," ").replace(/\s+/g,"").replace(/^[=]+|[=]+$/g,"");
+ // OCR commonly reads a leading equation label; keep only a plausible arithmetic run.
+ const matches=s.match(/-?\d+(?:\.\d+)?(?:[+\-*/]-?\d+(?:\.\d+)?)+/g);
+ if(!matches)return "";
+ return matches.sort((a,b)=>b.length-a.length)[0]||"";
+}
+$("solvePhoto").onclick=()=>{
+ const candidate=$("recognizedExpression").value.replace(/,/g,".").replace(/\s+/g,"");
+ if(!candidate){showToast("Сначала введи пример");return}
+ try{
+   const answer=parse(candidate);
+   // Independent arithmetic sanity checks: finite result, repeat parse, and normalized result agreement.
+   const checks=[
+     Number.isFinite(answer),
+     Math.abs(parse(candidate)-answer)<1e-10,
+     Math.abs(Number(answer.toPrecision(11))-answer)<Math.max(1,Math.abs(answer))*1e-10,
+     candidate.length>0,
+     !(/[+\-*/.]$/.test(candidate))
+   ];
+   const passed=checks.filter(Boolean).length;
+   $("photoChecks").textContent=`Математическая проверка: ${passed}/5. Распознавание изображения не гарантирует точность, поэтому сравни пример с фото.`;
+   if(passed!==5){showToast("Проверка не пройдена");return}
+   expr=candidate;render();calculate();closeAll();showToast("Пример проверен и решён");
+ }catch(e){$("photoStatus").textContent="В выражении есть ошибка: "+(e.message||"проверь знаки и цифры");showToast("Исправь распознанный пример")}
+};
+try{let t=localStorage.getItem("calc-theme");if(t&&["white","black","blue"].includes(t))setTheme(t);else setTheme("black")}catch{setTheme("black")}
+</script>
+</body>
+</html>
